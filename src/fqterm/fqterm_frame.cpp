@@ -1464,6 +1464,7 @@ void FQTermFrame::addMainMenu() {
   //File Menu
   menuFile_ = menuMain_->addMenu(tr("&File"));
 
+  menuMain_->hide();
   FQTERM_ADDACTION(menuFile_, CONNECT, this, connectIt);
   FQTERM_ADDACTION(menuFile_, DISCONNECT, this, disconnect);
   FQTERM_ADDACTION(menuFile_, CONN_INFO, this, conn_info);

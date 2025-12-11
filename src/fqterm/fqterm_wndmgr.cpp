@@ -196,7 +196,7 @@ FQTermWindow* FQTermWndMgr::newWindow( const FQTermParam &param, FQTermConfig* c
 
   subWindow->resize(subWindowSize_);
   if (subWindowMax_) {
-    subWindow->setWindowFlags(Qt::SubWindow | Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint);
+    subWindow->setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
     subWindow->showMaximized();
   } else {
     subWindow->setWindowFlags(Qt::SubWindow | (Qt::CustomizeWindowHint
