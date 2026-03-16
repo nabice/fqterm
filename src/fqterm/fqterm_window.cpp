@@ -2329,6 +2329,12 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
     
     QByteArray cstrTmp = session_->unicode2bbs_smart(text);
     session_->write(cstrTmp, cstrTmp.length());
+    
+    // 'p' key for next article in topic reading
+    if (text == "p" || text == "P") {
+      lastArrowDirection_ = 1;
+      lastCheckedAuthor_.clear();
+    }
   }
   return;
 }
