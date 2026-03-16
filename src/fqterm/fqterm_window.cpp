@@ -2331,7 +2331,7 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
     session_->write(cstrTmp, cstrTmp.length());
     
     // 'p' key for next article in topic reading
-    if (text == "p" || text == "P") {
+    if (text == "p") {
       lastArrowDirection_ = 1;
       lastCheckedAuthor_.clear();
     }
