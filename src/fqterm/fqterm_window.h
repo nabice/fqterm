@@ -285,15 +285,18 @@ signals:
 
   void writePasting(const QString& content);
 
-  bool shouldSkipCurrentLine() const;
-  void checkAndSkipBlockedLine(int direction);
   bool isReadArticlePage() const;
   bool extractArticleAuthor(QString &author) const;
-  void checkAndSkipBlockedArticle();
+  bool checkAndSkipBlockedArticle();
+  bool isArticleListPage() const;
+  bool checkAndSkipBlockedListItem();
 
   int pendingSkipDirection_;
-  bool isSkippingArticle_;
   int lastArrowDirection_;
+  QString lastCheckedAuthor_;
+  int lastCheckedListLine_;
+  bool skipNextRender_;
+  int pendingArrowAfterSkip_;
 
 signals:
   //these 2 signals are connected to corresponding slots to 

@@ -99,8 +99,11 @@ FQTermWindow::FQTermWindow(FQTermConfig *config, FQTermFrame *frame, FQTermParam
       blinkStatus_(true),
       isUrlUnderLined_(false),
       pendingSkipDirection_(0),
-      isSkippingArticle_(false),
       lastArrowDirection_(1),
+      lastCheckedAuthor_(),
+      lastCheckedListLine_(-1),
+      skipNextRender_(false),
+      pendingArrowAfterSkip_(0),
 #ifdef HAVE_PYTHON
       // the system wide script
       pythonScriptLoaded_(false),
@@ -651,14 +654,30 @@ bool FQTermWindow::isConnected() {
 /* ------------------------------------------------------------------------ */
 
 void FQTermWindow::sessionUpdated() {
+  // Handle pending arrow after left arrow (for articles with "下面还有喔")
+  if (skipNextRender_) {
+    skipNextRender_ = false;
+    if (pendingArrowAfterSkip_ != 0) {
+      session_->writeStr(directions_[(pendingArrowAfterSkip_ > 0) ? 5 : 4]);
+      pendingArrowAfterSkip_ = 0;
+    }
+    return;
+  }
+  
+  if (checkAndSkipBlockedArticle()) {
+    return;
+  }
+  
+  if (checkAndSkipBlockedListItem()) {
+    return;
+  }
+  
   refreshScreen();
   //send a mouse move event to make mouse-related change
   QMouseEvent* me = new QMouseEvent(
       QEvent::MouseMove, mapFromGlobal(QCursor::pos()),
       QCursor::pos(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
   QApplication::postEvent(this, me);
-  
-  checkAndSkipBlockedArticle();
 }
 
 void FQTermWindow::requestUserPwd(QString *user, QString *pwd, bool *isOK) {
@@ -2073,12 +2092,14 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
         case Qt::Key_Up:
           session_->writeStr("\x1bOA");
           lastArrowDirection_ = -1;
-          checkAndSkipBlockedLine(-1);
+          lastCheckedAuthor_.clear();
+          lastCheckedListLine_ = -1;
           return;
         case Qt::Key_Down:
           session_->writeStr("\x1bOB");
           lastArrowDirection_ = 1;
-          checkAndSkipBlockedLine(1);
+          lastCheckedAuthor_.clear();
+          lastCheckedListLine_ = -1;
           return;
         case Qt::Key_Left:
           session_->writeStr("\x1bOD");
@@ -2092,12 +2113,14 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
         case Qt::Key_Up:
           session_->writeStr("\x1b[A");
           lastArrowDirection_ = -1;
-          checkAndSkipBlockedLine(-1);
+          lastCheckedAuthor_.clear();
+          lastCheckedListLine_ = -1;
           return;
         case Qt::Key_Down:
           session_->writeStr("\x1b[B");
           lastArrowDirection_ = 1;
-          checkAndSkipBlockedLine(1);
+          lastCheckedAuthor_.clear();
+          lastCheckedListLine_ = -1;
           return;
         case Qt::Key_Left:
           session_->writeStr("\x1b[D");
@@ -2114,13 +2137,15 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
         // Do NOT change the parameter to "\x1bA".
         session_->writeStr("\x1b" "A");
         lastArrowDirection_ = -1;
-        checkAndSkipBlockedLine(-1);
+        lastCheckedAuthor_.clear();
+        lastCheckedListLine_ = -1;
         return;
       case Qt::Key_Down:
         // Do NOT change the parameter to "\x1bB".        
         session_->writeStr("\x1b" "B");
         lastArrowDirection_ = 1;
-        checkAndSkipBlockedLine(1);
+        lastCheckedAuthor_.clear();
+        lastCheckedListLine_ = -1;
         return;
       case Qt::Key_Left:
         // Do NOT change the parameter to "\x1bD".        
@@ -2173,25 +2198,30 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
       return;
     case Qt::Key_End:
       session_->writeStr(directions_[1]);
-      checkAndSkipBlockedLine(-1);
+      lastArrowDirection_ = -1;
+      lastCheckedListLine_ = -1;
       return;
     case Qt::Key_PageUp:
       session_->writeStr(directions_[2]);
-      checkAndSkipBlockedLine(1);
+      lastArrowDirection_ = 1;
+      lastCheckedListLine_ = -1;
       return;
     case Qt::Key_PageDown:
       session_->writeStr(directions_[3]);
-      checkAndSkipBlockedLine(1);
+      lastArrowDirection_ = 1;
+      lastCheckedListLine_ = -1;
       return;
     case Qt::Key_Up:
       session_->writeStr(directions_[4]);
       lastArrowDirection_ = -1;
-      checkAndSkipBlockedLine(-1);
+      lastCheckedAuthor_.clear();
+      lastCheckedListLine_ = -1;
       return;
     case Qt::Key_Down:
       session_->writeStr(directions_[5]);
       lastArrowDirection_ = 1;
-      checkAndSkipBlockedLine(1);
+      lastCheckedAuthor_.clear();
+      lastCheckedListLine_ = -1;
       return;
     case Qt::Key_Left:
       session_->writeStr(directions_[6]);
@@ -2551,71 +2581,6 @@ void FQTermExternalEditor::stateChanged( QProcess::ProcessState state ) {
   started_ = false;
 }
 
-bool FQTermWindow::shouldSkipCurrentLine() const {
-  if (!FQTermPref::getInstance()->enableAuthorFilter_) return false;
-  
-  FQTermBuffer *buffer = session_->getBuffer();
-  int numRows = buffer->getNumRows();
-  bool isArticleList = false;
-  for (int i = 0; i < qMin(5, numRows); ++i) {
-    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
-    if (!line) continue;
-    QString text;
-    line->getAllPlainText(text);
-    if (text.contains("编号") && (text.contains("刊登者") || text.contains("刊 登 者"))) {
-      isArticleList = true;
-      break;
-    }
-  }
-  if (!isArticleList) return false;
-  
-  int caretLine = buffer->getCaretLine();
-  const FQTermTextLine *pTextLine = buffer->getTextLineInBuffer(caretLine);
-  if (!pTextLine) return false;
-  
-  QString lineText;
-  pTextLine->getAllPlainText(lineText);
-  if (lineText.isEmpty()) return false;
-  
-  int len = lineText.length();
-  int pos = 0;
-  
-  while (pos < len && (lineText[pos] == '>' || lineText[pos].isSpace())) pos++;
-  while (pos < len && lineText[pos].isDigit()) pos++;
-  while (pos < len && lineText[pos].isSpace()) pos++;
-  if (pos < len && lineText[pos] == '*') pos++;
-  while (pos < len && lineText[pos].isSpace()) pos++;
-  
-  int authorStart = pos;
-  while (pos < len && !lineText[pos].isSpace()) pos++;
-  
-  if (authorStart < pos) {
-    QString author = lineText.mid(authorStart, pos - authorStart);
-    const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
-    for (int i = 0; i < blocked.size(); ++i) {
-      if (author == blocked[i]) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-void FQTermWindow::checkAndSkipBlockedLine(int direction) {
-  if (direction == 0) return;
-  
-  QTimer::singleShot(50, this, [this, direction]() {
-    if (shouldSkipCurrentLine()) {
-      if (direction > 0) {
-        session_->writeStr(directions_[5]);
-      } else {
-        session_->writeStr(directions_[4]);
-      }
-      checkAndSkipBlockedLine(direction);
-    }
-  });
-}
-
 bool FQTermWindow::isReadArticlePage() const {
   FQTermBuffer *buffer = session_->getBuffer();
   int numRows = buffer->getNumRows();
@@ -2668,20 +2633,20 @@ bool FQTermWindow::extractArticleAuthor(QString &author) const {
   return false;
 }
 
-void FQTermWindow::checkAndSkipBlockedArticle() {
-  if (!FQTermPref::getInstance()->enableAuthorFilter_) return;
-  if (isSkippingArticle_) return;
+bool FQTermWindow::checkAndSkipBlockedArticle() {
+  if (!FQTermPref::getInstance()->enableAuthorFilter_) return false;
   
-  if (!isReadArticlePage()) return;
+  if (!isReadArticlePage()) return false;
   
   QString author;
-  if (!extractArticleAuthor(author)) return;
+  if (!extractArticleAuthor(author)) return false;
+  
+  if (author == lastCheckedAuthor_) return false;
+  lastCheckedAuthor_ = author;
   
   const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
   for (int i = 0; i < blocked.size(); ++i) {
     if (author == blocked[i]) {
-      isSkippingArticle_ = true;
-      
       FQTermBuffer *buffer = session_->getBuffer();
       int numRows = buffer->getNumRows();
       bool hasMoreContent = false;
@@ -2698,26 +2663,77 @@ void FQTermWindow::checkAndSkipBlockedArticle() {
         }
       }
       
-      QTimer::singleShot(100, this, [this, hasMoreContent]() {
-        int arrowIdx = (lastArrowDirection_ < 0) ? 4 : 5;
-        if (hasMoreContent) {
-          session_->writeStr(directions_[6]); // Left arrow to exit
-          QTimer::singleShot(100, this, [this, arrowIdx]() {
-            session_->writeStr(directions_[arrowIdx]);
-            QTimer::singleShot(500, this, [this]() {
-              isSkippingArticle_ = false;
-            });
-          });
-        } else {
-          session_->writeStr(directions_[arrowIdx]);
-          QTimer::singleShot(500, this, [this]() {
-            isSkippingArticle_ = false;
-          });
-        }
-      });
-      return;
+      int arrowIdx = (lastArrowDirection_ < 0) ? 4 : 5;
+      if (hasMoreContent) {
+        skipNextRender_ = true;
+        pendingArrowAfterSkip_ = (lastArrowDirection_ < 0) ? -1 : 1;
+        session_->writeStr(directions_[6]); // Left arrow to exit
+      } else {
+        session_->writeStr(directions_[arrowIdx]);
+      }
+      return true;
     }
   }
+  return false;
+}
+
+bool FQTermWindow::isArticleListPage() const {
+  FQTermBuffer *buffer = session_->getBuffer();
+  int numRows = buffer->getNumRows();
+  for (int i = 0; i < qMin(5, numRows); ++i) {
+    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
+    if (!line) continue;
+    QString text;
+    line->getAllPlainText(text);
+    if (text.contains("编号") && (text.contains("刊登者") || text.contains("刊 登 者"))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FQTermWindow::checkAndSkipBlockedListItem() {
+  if (!FQTermPref::getInstance()->enableAuthorFilter_) return false;
+  
+  if (!isArticleListPage()) return false;
+  
+  FQTermBuffer *buffer = session_->getBuffer();
+  int caretLine = buffer->getCaretLine();
+  
+  if (caretLine == lastCheckedListLine_) return false; // Already checked this line
+  lastCheckedListLine_ = caretLine;
+  
+  const FQTermTextLine *pTextLine = buffer->getTextLineInBuffer(caretLine);
+  if (!pTextLine) return false;
+  
+  QString lineText;
+  pTextLine->getAllPlainText(lineText);
+  if (lineText.isEmpty()) return false;
+  
+  int len = lineText.length();
+  int pos = 0;
+  
+  while (pos < len && (lineText[pos] == '>' || lineText[pos].isSpace())) pos++;
+  while (pos < len && lineText[pos].isDigit()) pos++;
+  while (pos < len && lineText[pos].isSpace()) pos++;
+  if (pos < len && lineText[pos] == '*') pos++;
+  while (pos < len && lineText[pos].isSpace()) pos++;
+  
+  int authorStart = pos;
+  while (pos < len && !lineText[pos].isSpace()) pos++;
+  
+  if (authorStart < pos) {
+    QString author = lineText.mid(authorStart, pos - authorStart);
+    const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
+    for (int i = 0; i < blocked.size(); ++i) {
+      if (author == blocked[i]) {
+        int arrowIdx = (lastArrowDirection_ < 0) ? 4 : 5;
+        session_->writeStr(directions_[arrowIdx]);
+        return true; // Skip rendering
+      }
+    }
+  }
+  return false;
 }
 
 } // namespace FQTerm
