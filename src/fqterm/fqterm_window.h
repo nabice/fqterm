@@ -285,8 +285,12 @@ signals:
 
   void writePasting(const QString& content);
 
+  bool shouldSkipCurrentLine() const;
+  void checkAndSkipBlockedLine(int direction);
 
-signals: 
+  int pendingSkipDirection_;
+
+signals:
   //these 2 signals are connected to corresponding slots to 
   //make write thread safe.
   int writeStringSignal(const QString& str);

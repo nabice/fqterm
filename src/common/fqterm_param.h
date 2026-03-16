@@ -4,6 +4,7 @@
 #define FQTERM_PARAM_H
 
 #include <QString>
+#include <QStringList>
 #include <QColor>
 #include <QObject>
 
@@ -55,6 +56,10 @@ struct FQTermPref {
   QString escapeString_;
   int termScrollBarPosition_; // 0--hide 1--LEFT 2--RIGHT
   bool runServer_;
+  
+  // author filter
+  bool enableAuthorFilter_;
+  QStringList blockedAuthors_;
 };
 
 

@@ -179,7 +179,8 @@ class FQTermScreen: public QWidget {
   void nextLine();
   void scrollLine(int);
  protected:
-   void drawSingleUnderLine(QPainter &, const QPoint& startPoint, const QPoint& endPoint);
+  void drawSingleUnderLine(QPainter &, const QPoint& startPoint, const QPoint& endPoint);
+  bool isAuthorBlocked(int lineIndex, QString &author) const;
 
   QRect clientRectangle_; // the display area
   QRect menuRect_;

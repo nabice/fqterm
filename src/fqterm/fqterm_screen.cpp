@@ -937,12 +937,94 @@ static bool isColorBlock(const QChar& c) {
           (c.unicode() >= 0x25e2 && c.unicode() <= 0x25e5));
 }
 
+static QString extractAuthor(const QString &lineText) {
+  QString author;
+  int len = lineText.length();
+  if (len < 20) return author;
+  
+  int pos = 0;
+  
+  // 跳过行首的 '>' 或空格
+  while (pos < len && (lineText[pos] == '>' || lineText[pos].isSpace())) pos++;
+  // 跳过文章编号（数字）
+  while (pos < len && lineText[pos].isDigit()) pos++;
+  // 跳过空格
+  while (pos < len && lineText[pos].isSpace()) pos++;
+  // 跳过状态标记 '*' 或空格
+  if (pos < len && lineText[pos] == '*') pos++;
+  // 跳过空格
+  while (pos < len && lineText[pos].isSpace()) pos++;
+  
+  if (pos >= len) return author;
+  int authorStart = pos;
+  
+  // 获取作者名（直到遇到空格）
+  while (pos < len && !lineText[pos].isSpace()) pos++;
+  int authorEnd = pos;
+  
+  if (authorStart >= 0 && authorEnd > authorStart) {
+    author = lineText.mid(authorStart, authorEnd - authorStart);
+  }
+  return author;
+}
+
+static bool isArticleListPage(const FQTermBuffer *buffer) {
+  int numRows = buffer->getNumRows();
+  for (int i = 0; i < qMin(5, numRows); ++i) {
+    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
+    if (!line) continue;
+    QString text;
+    line->getAllPlainText(text);
+    if (text.contains("编号") && (text.contains("刊登者") || text.contains("刊 登 者"))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FQTermScreen::isAuthorBlocked(int lineIndex, QString &author) const {
+  if (!FQTermPref::getInstance()->enableAuthorFilter_) {
+    return false;
+  }
+  
+  if (!isArticleListPage(termBuffer_)) {
+    return false;
+  }
+  
+  const FQTermTextLine *pTextLine = termBuffer_->getTextLineInBuffer(lineIndex);
+  if (!pTextLine) return false;
+  
+  QString lineText;
+  pTextLine->getAllPlainText(lineText);
+  if (lineText.isEmpty()) return false;
+  
+  author = extractAuthor(lineText);
+  if (author.isEmpty()) return false;
+  
+  const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
+  for (int i = 0; i < blocked.size(); ++i) {
+    if (author == blocked[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /////////////////////////////////////////////////
 // draw a line with the specialAtter if given.
 // modified by hooey to draw part of the line.
 void FQTermScreen::drawLine(QPainter &painter, int index, int startx, int endx,
                             bool complete) {
   FQ_ASSERT(index < termBuffer_->getNumLines());
+
+  QString blockedAuthor;
+  if (isAuthorBlocked(index, blockedAuthor)) {
+    const FQTermTextLine *pTextLine = termBuffer_->getTextLineInBuffer(index);
+    uint linelength = pTextLine->getWidth();
+    QRect rect = mapToRect(0, index, linelength, 1);
+    drawBackground(painter, rect, 0);
+    return;
+  }
 
   const FQTermTextLine *pTextLine = termBuffer_->getTextLineInBuffer(index);
   const unsigned char *color = pTextLine->getColors();

@@ -397,11 +397,19 @@ void FQTermFrame::loadPref() {
   }
   FQTermPref::getInstance()->searchEngine_ = strTmp;
 
-  strTmp = config_->getItemValue("preference", "editorarg");
+strTmp = config_->getItemValue("preference", "editorarg");
   FQTermPref::getInstance()->externalEditorArg_ = strTmp;
  
   strTmp = config_->getItemValue("preference", "asciienhance");
   FQTermPref::getInstance()->isAnsciiEnhance_ = (strTmp == "1");
+  
+  strTmp = config_->getItemValue("preference", "enableauthorfilter");
+  FQTermPref::getInstance()->enableAuthorFilter_ = (strTmp == "1");
+  strTmp = config_->getItemValue("preference", "blockedauthors");
+  FQTermPref::getInstance()->blockedAuthors_ = strTmp.split(",", QString::SkipEmptyParts);
+  for (int i = 0; i < FQTermPref::getInstance()->blockedAuthors_.size(); ++i) {
+    FQTermPref::getInstance()->blockedAuthors_[i] = FQTermPref::getInstance()->blockedAuthors_[i].trimmed();
+  }
 }
 
 //save current setting to fqterm.cfg
@@ -445,13 +453,18 @@ void FQTermFrame::saveSetting() {
   int w = windowManager_->getSubWindowSize().width();
   int h = windowManager_->getSubWindowSize().height();
 
-  strTmp = QString("%1 %2").arg(w).arg(h);
+strTmp = QString("%1 %2").arg(w).arg(h);
   config_->setItemValue("global", "subwindowsize", strTmp);
 
   //Save toolbarstate.
   QByteArray state = saveState().toHex();
   strTmp = QString(state);
   config_->setItemValue("global", "toolbarstate", strTmp);
+
+  config_->setItemValue("preference", "enableauthorfilter", 
+                        FQTermPref::getInstance()->enableAuthorFilter_ ? "1" : "0");
+  config_->setItemValue("preference", "blockedauthors",
+                        FQTermPref::getInstance()->blockedAuthors_.join(","));
 
   config_->save(getPath(USER_CONFIG) + "fqterm.cfg");
 }
