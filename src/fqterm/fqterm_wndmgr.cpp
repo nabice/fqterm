@@ -195,8 +195,13 @@ FQTermWindow* FQTermWndMgr::newWindow( const FQTermParam &param, FQTermConfig* c
   tabBar_->update();
 
   subWindow->resize(subWindowSize_);
+  QString showToolbar = termFrame_->config()->getItemValue("global", "showtoolbar");
   if (subWindowMax_) {
-    subWindow->setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
+    if (showToolbar == "0") {
+      subWindow->setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
+    } else {
+      subWindow->setWindowFlags(Qt::SubWindow | Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint);
+    }
     subWindow->showMaximized();
   } else {
     subWindow->setWindowFlags(Qt::SubWindow | (Qt::CustomizeWindowHint
