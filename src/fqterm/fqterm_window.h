@@ -287,8 +287,13 @@ signals:
 
   bool shouldSkipCurrentLine() const;
   void checkAndSkipBlockedLine(int direction);
+  bool isReadArticlePage() const;
+  bool extractArticleAuthor(QString &author) const;
+  void checkAndSkipBlockedArticle();
 
   int pendingSkipDirection_;
+  bool isSkippingArticle_;
+  int lastArrowDirection_;
 
 signals:
   //these 2 signals are connected to corresponding slots to 
