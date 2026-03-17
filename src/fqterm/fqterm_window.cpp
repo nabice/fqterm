@@ -2648,7 +2648,6 @@ bool FQTermWindow::checkAndSkipBlockedArticle() {
   if (!extractArticleAuthor(author)) return false;
   
   if (author == lastCheckedAuthor_) return false;
-  lastCheckedAuthor_ = author;
   
   const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
   for (int i = 0; i < blocked.size(); ++i) {
@@ -2680,6 +2679,8 @@ bool FQTermWindow::checkAndSkipBlockedArticle() {
       return true;
     }
   }
+  
+  lastCheckedAuthor_ = author;
   return false;
 }
 
