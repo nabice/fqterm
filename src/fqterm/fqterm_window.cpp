@@ -2334,6 +2334,7 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
     if (text == "p" || text == " ") {
       lastArrowDirection_ = 1;
       lastCheckedAuthor_.clear();
+      lastCheckedListLine_ = -1;
     }
   }
   return;
