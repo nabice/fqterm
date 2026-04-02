@@ -233,6 +233,7 @@ void FQTermSession::detectPageState() {
                 pageState_ = Read;
               } else {
                   pageState_ = Edit;
+                  cacheEditPage();
                 }
             } else if (colorInfo[3].backgroundColorIndex.count() == 2 &&
                   colorInfo[3].backgroundColorIndex.at(0) == 4 &&
@@ -1498,6 +1499,39 @@ void FQTermSession::updateSetting( const FQTermParam& p ) {
 			return;
 		}
 	}
+
+    void FQTermSession::cacheEditPage() {
+        if (pageState_ != Edit) {
+            return;
+        }
+
+        const QString cacheFilePath = "/tmp/fqterm_edit_cache.txt";
+        QFile cacheFile(cacheFilePath);
+        
+        if (!cacheFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            return;
+        }
+
+        FQTermBuffer *buffer = getBuffer();
+        if (!buffer) {
+            cacheFile.close();
+            return;
+        }
+
+        QString cacheContent;
+        int numRows = buffer->getNumRows();
+        
+        for (int i = 0; i < numRows; ++i) {
+            const FQTermTextLine *line = buffer->getTextLineInTerm(i);
+            if (line) {
+                line->getAllPlainText(cacheContent);
+                cacheContent += "\n";
+            }
+        }
+
+        cacheFile.write(unicode2bbs(cacheContent));
+        cacheFile.close();
+    }
 
     void FQTermSession::stopLogging(bool savedata)
 	{

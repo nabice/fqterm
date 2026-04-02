@@ -203,6 +203,9 @@ class FQTermSession: public QObject {
   void stopLogging(bool);
   bool isLogging();
 
+  // cache edit page
+  void cacheEditPage();
+
   conn_info_t * connectionInfo() { return telnet_->connectionInfo(); }
  public:
 
