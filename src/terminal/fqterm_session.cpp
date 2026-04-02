@@ -286,7 +286,7 @@ void FQTermSession::detectPageState() {
     return;
   }
 
-  if (colorInfo[0].foregroundColorIndex.indexOf(14) != -1) {
+  if (colorInfo[0].foregroundColorIndex.indexOf(6) != -1) {
     pageState_ = ArticleList;
     return;
   }

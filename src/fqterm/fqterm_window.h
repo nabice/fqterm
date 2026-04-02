@@ -288,7 +288,6 @@ signals:
   bool isReadArticlePage() const;
   bool extractArticleAuthor(QString &author) const;
   bool checkAndSkipBlockedArticle();
-  bool isArticleListPage() const;
   bool checkAndSkipBlockedListItem();
 
   int pendingSkipDirection_;

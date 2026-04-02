@@ -968,26 +968,12 @@ static QString extractAuthor(const QString &lineText) {
   return author;
 }
 
-static bool isArticleListPage(const FQTermBuffer *buffer) {
-  int numRows = buffer->getNumRows();
-  for (int i = 0; i < qMin(5, numRows); ++i) {
-    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
-    if (!line) continue;
-    QString text;
-    line->getAllPlainText(text);
-    if (text.contains("编号") && (text.contains("刊登者") || text.contains("刊 登 者"))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool FQTermScreen::isAuthorBlocked(int lineIndex, QString &author) const {
   if (!FQTermPref::getInstance()->enableAuthorFilter_) {
     return false;
   }
   
-  if (!isArticleListPage(termBuffer_)) {
+  if (session_->getPageState() != FQTermSession::ArticleList) {
     return false;
   }
   

@@ -2685,25 +2685,10 @@ bool FQTermWindow::checkAndSkipBlockedArticle() {
   return false;
 }
 
-bool FQTermWindow::isArticleListPage() const {
-  FQTermBuffer *buffer = session_->getBuffer();
-  int numRows = buffer->getNumRows();
-  for (int i = 0; i < qMin(5, numRows); ++i) {
-    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
-    if (!line) continue;
-    QString text;
-    line->getAllPlainText(text);
-    if (text.contains("编号") && (text.contains("刊登者") || text.contains("刊 登 者"))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool FQTermWindow::checkAndSkipBlockedListItem() {
   if (!FQTermPref::getInstance()->enableAuthorFilter_) return false;
   
-  if (!isArticleListPage()) return false;
+  if (session_->getPageState() != FQTermSession::ArticleList) return false;
   
   FQTermBuffer *buffer = session_->getBuffer();
   int caretLine = buffer->getCaretLine();
