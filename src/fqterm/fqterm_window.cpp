@@ -654,7 +654,7 @@ bool FQTermWindow::isConnected() {
 /* ------------------------------------------------------------------------ */
 
 void FQTermWindow::sessionUpdated() {
-  // Handle pending arrow after left arrow (for articles with "下面还有喔")
+  // Handle pending arrow after left arrow (for articles with mutil pages)
   if (skipNextRender_) {
     skipNextRender_ = false;
     if (pendingArrowAfterSkip_ != 0) {
@@ -2603,7 +2603,7 @@ bool FQTermWindow::extractArticleAuthor(QString &author) const {
   int authorEnd = authorStart;
   while (authorEnd < text.length()) {
     QChar ch = text[authorEnd];
-    if (!ch.isLetterOrNumber()) {
+    if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))) {
       break;
     }
     authorEnd++;
@@ -2627,24 +2627,24 @@ bool FQTermWindow::checkAndSkipBlockedArticle() {
   
   if (author == lastCheckedAuthor_) return false;
   
-  const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
-  for (int i = 0; i < blocked.size(); ++i) {
-    if (author == blocked[i]) {
-      FQTermBuffer *buffer = session_->getBuffer();
-      int numRows = buffer->getNumRows();
-      bool hasMoreContent = false;
-      
-      for (int row = numRows - 5; row < numRows; ++row) {
-        if (row < 0) continue;
-        const FQTermTextLine *line = buffer->getTextLineInTerm(row);
-        if (!line) continue;
-        QString text;
-        line->getAllPlainText(text);
-        if (text.contains("下面还有喔")) {
-          hasMoreContent = true;
-          break;
-        }
-      }
+      const QStringList &blocked = FQTermPref::getInstance()->blockedAuthors_;
+      for (int i = 0; i < blocked.size(); ++i) {
+        if (author == blocked[i]) {
+          FQTermBuffer *buffer = session_->getBuffer();
+          int numRows = buffer->getNumRows();
+          bool hasMoreContent = false;
+          
+          int lastRow = numRows - 1;
+          if (lastRow >= 0) {
+            const FQTermTextLine *line = buffer->getTextLineInTerm(lastRow);
+            if (line) {
+              QString text;
+              line->getAllPlainText(text);
+              if (text.contains("%")) {
+                hasMoreContent = true;
+              }
+            }
+          }
       
       int arrowIdx = (lastArrowDirection_ < 0) ? 4 : 5;
       if (hasMoreContent) {

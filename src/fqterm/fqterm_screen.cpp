@@ -944,21 +944,13 @@ static QString extractAuthor(const QString &lineText) {
   
   int pos = 0;
   
-  // 跳过行首的 '>' 或空格
   while (pos < len && (lineText[pos] == '>' || lineText[pos].isSpace())) pos++;
-  // 跳过文章编号（数字）
   while (pos < len && lineText[pos].isDigit()) pos++;
-  // 跳过空格
-  while (pos < len && lineText[pos].isSpace()) pos++;
-  // 跳过状态标记 '*' 或空格
-  if (pos < len && lineText[pos] == '*') pos++;
-  // 跳过空格
-  while (pos < len && lineText[pos].isSpace()) pos++;
+  pos = pos + 3;
   
   if (pos >= len) return author;
   int authorStart = pos;
   
-  // 获取作者名（直到遇到空格）
   while (pos < len && !lineText[pos].isSpace()) pos++;
   int authorEnd = pos;
   
@@ -983,6 +975,23 @@ bool FQTermScreen::isAuthorBlocked(int lineIndex, QString &author) const {
   QString lineText;
   pTextLine->getAllPlainText(lineText);
   if (lineText.isEmpty()) return false;
+
+     
+  if (lineText.length() > 0 && lineText[0] != ' ' && lineText[0] != '>') {
+    return false;
+  }
+  
+  if (lineText.length() > 2 && (lineText[2] == '[')) {
+    return false;
+  }
+  
+  const unsigned char *color = pTextLine->getColors();
+  uint lineLength = pTextLine->getWidth();
+  for (uint i = 0; i < lineLength; ++i) {
+    if (GETBG(color[i]) != 0) {
+      return false;
+    }
+  }
   
   author = extractAuthor(lineText);
   if (author.isEmpty()) return false;
