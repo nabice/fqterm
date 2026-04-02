@@ -2588,62 +2588,39 @@ void FQTermExternalEditor::stateChanged( QProcess::ProcessState state ) {
   started_ = false;
 }
 
-bool FQTermWindow::isReadArticlePage() const {
-  FQTermBuffer *buffer = session_->getBuffer();
-  int numRows = buffer->getNumRows();
-  
-  bool hasAuthor = false;
-  bool hasTitle = false;
-  
-  for (int i = 0; i < qMin(10, numRows); ++i) {
-    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
-    if (!line) continue;
-    QString text;
-    line->getAllPlainText(text);
-    if (text.contains("发信人:")) {
-      hasAuthor = true;
-    }
-    if (text.contains("标  题:") || text.contains("标　题:")) {
-      hasTitle = true;
-    }
-  }
-  
-  return hasAuthor && hasTitle;
-}
-
 bool FQTermWindow::extractArticleAuthor(QString &author) const {
   FQTermBuffer *buffer = session_->getBuffer();
-  int numRows = buffer->getNumRows();
+  const FQTermTextLine *line = buffer->getTextLineInTerm(0);
+  if (!line) return false;
   
-  for (int i = 0; i < qMin(10, numRows); ++i) {
-    const FQTermTextLine *line = buffer->getTextLineInTerm(i);
-    if (!line) continue;
-    QString text;
-    line->getAllPlainText(text);
-    
-    int pos = text.indexOf("发信人:");
-    if (pos >= 0) {
-      pos += 4; // skip "发信人:"
-      while (pos < text.length() && text[pos].isSpace()) pos++;
-      
-      int authorStart = pos;
-      while (pos < text.length() && !text[pos].isSpace() && text[pos] != '(' && text[pos] != ',') {
-        pos++;
-      }
-      
-      if (authorStart < pos) {
-        author = text.mid(authorStart, pos - authorStart);
-        return true;
-      }
+  QString text;
+  line->getAllPlainText(text);
+  
+  if (text.length() < 6) return false;
+  
+  int authorStart = 5;
+
+  int authorEnd = authorStart;
+  while (authorEnd < text.length()) {
+    QChar ch = text[authorEnd];
+    if (!ch.isLetterOrNumber()) {
+      break;
     }
+    authorEnd++;
   }
+  
+  if (authorEnd > authorStart) {
+    author = text.mid(authorStart, authorEnd - authorStart);
+    return true;
+  }
+  
   return false;
 }
 
 bool FQTermWindow::checkAndSkipBlockedArticle() {
   if (!FQTermPref::getInstance()->enableAuthorFilter_) return false;
   
-  if (!isReadArticlePage()) return false;
+  if (session_->getPageState() != FQTermSession::Read) return false;
   
   QString author;
   if (!extractArticleAuthor(author)) return false;

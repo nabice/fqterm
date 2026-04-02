@@ -285,7 +285,6 @@ signals:
 
   void writePasting(const QString& content);
 
-  bool isReadArticlePage() const;
   bool extractArticleAuthor(QString &author) const;
   bool checkAndSkipBlockedArticle();
   bool checkAndSkipBlockedListItem();
