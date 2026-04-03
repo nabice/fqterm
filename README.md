@@ -3,6 +3,10 @@ FQTerm是为Telnet BBS设计的终端模拟器(俗称Term)，支持Telnet,SSH协
 本项目源自QTerm-Qt3,从2008年起，由Curvlet和dp2重写并移植至Qt4.    
 现在FQTerm的原开发组成员已经停止了该项目的维护，现由archlinux(mytbk@GitHub)网友维护并移植至Qt5。    
 
+## 本Fork实现的功能
+- 黑名单过滤：可配置黑名单用户，其帖子在帖子列表不可见，阅读文章过程中也会自动跳过。
+- 编辑器缓存：实时缓存编辑器页面，防止帖子被审核时内容丢失。
+
 ## 文档
 目前FQTerm还没有特别完整的文档，现在正在进行文档编写。用Markdown编写的文档请见[doc目录](doc/).
 
