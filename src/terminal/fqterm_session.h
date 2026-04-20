@@ -286,6 +286,7 @@ private:
   char menuChar_;
   QRect menuRect_;
   PageState pageState_;
+  PageState lastPageState_;
   QPoint cursorPoint_;
   int screenStartLineNumber_;
 
@@ -307,6 +308,7 @@ private:
   QByteArray *logData;
   
   int reconnectRetry_;
+  QString editCacheFilePath_;
 public:
   void setScriptListener(FQTermScriptEventListener* pythonListener) {
     scriptListener_ = pythonListener;

@@ -28,6 +28,7 @@
 #include <QtAlgorithms>
 #include <QChar>
 #include <QPair>
+#include <QDateTime>
 #include <QReadLocker>
 #include <QWriteLocker>
 #include <QReadWriteLock>
@@ -207,6 +208,7 @@ QString FQTermSession::getMessage() {
 
 
 void FQTermSession::detectPageState() {
+  PageState oldPageState = pageState_;
   //for smth type bbs.
   pageState_ = Undefined;
   if (param_.hostType_ != 0) {
@@ -232,6 +234,9 @@ void FQTermSession::detectPageState() {
             if (text[0] != L'\x3010') {
                 pageState_ = Read;
               } else {
+                  if (oldPageState != Edit) {
+                      editCacheFilePath_.clear();
+                  }
                   pageState_ = Edit;
                   cacheEditPage();
                 }
@@ -300,6 +305,7 @@ void FQTermSession::detectPageState() {
       pageState_ = MailMenu;
     }
   }
+
 
 }
 
@@ -1505,8 +1511,13 @@ void FQTermSession::updateSetting( const FQTermParam& p ) {
             return;
         }
 
-        const QString cacheFilePath = "/tmp/fqterm_edit_cache.txt";
-        QFile cacheFile(cacheFilePath);
+        if (editCacheFilePath_.isEmpty()) {
+            QDateTime now = QDateTime::currentDateTime();
+            editCacheFilePath_ = QString("/tmp/fqterm_edit_cache_%1.txt")
+                .arg(now.toString("yyyyMMdd_HHmmss_zzz"));
+        }
+
+        QFile cacheFile(editCacheFilePath_);
         
         if (!cacheFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             return;
