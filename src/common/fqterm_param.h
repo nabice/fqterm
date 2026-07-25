@@ -66,7 +66,7 @@ class FQTermParam {
 
   FQTermParam &operator = (const FQTermParam &);
 
-  bool operator==(const FQTermParam &);
+  bool operator==(const FQTermParam &) const;
 
   static const FQTermParam& getFQBBSParam();
   static QString getLanguageName(bool isEnglish, bool translate = true);

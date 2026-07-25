@@ -169,7 +169,7 @@ void FQTermParam::copy(const FQTermParam& param) {
   isAutoWrap_ = param.isAutoWrap_;
 }
 
-bool FQTermParam::operator==(const FQTermParam& param)
+bool FQTermParam::operator==(const FQTermParam& param) const
 {
   if (name_ != param.name_) return false;
   if (hostAddress_ != param.hostAddress_) return false;
