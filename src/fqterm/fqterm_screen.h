@@ -225,6 +225,7 @@ class FQTermScreen: public QWidget {
   bool hasBackground_;
   QPixmap backgroundPixmap_;
   QPixmap originBackgroundPixmap_;
+  QPixmap buffer_;
   //0 -- tile 1 -- center 2 -- stretch
   int backgroundRenderOption_;
   //0 -- Whole screen, 1 -- Only padding
