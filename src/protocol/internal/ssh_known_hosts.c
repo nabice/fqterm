@@ -14,9 +14,9 @@
 
 static char *ssh_hosts_file = NULL;
 
-static char *ssh_get_string(const char *buf, char *s, int size, char delim)
+static const char *ssh_get_string(const char *buf, char *s, int size, char delim)
 {
-	char *end = strchr(buf, delim);
+	const char *end = strchr(buf, delim);
 	if (end == NULL)
 		return NULL;
 
@@ -51,15 +51,15 @@ struct ssh_host *parse_hosts_file(const char *fn, int *list_sz)
 					  (size / 64 + 1));
 	nHosts = 0;
 	while (fgets(linebuf, sizeof(linebuf), fp)) {
-		char *host_end = ssh_get_string(linebuf, hosts[nHosts].hostname,
+		const char *host_end = ssh_get_string(linebuf, hosts[nHosts].hostname,
 						256, ' ');
 		if (host_end == NULL)
 			continue;
-		char *type_end = ssh_get_string(host_end + 1,
+		const char *type_end = ssh_get_string(host_end + 1,
 						hosts[nHosts].keytype, 32, ' ');
 		if (type_end == NULL)
 			continue;
-		char *key_end = ssh_get_string(
+		const char *key_end = ssh_get_string(
 			type_end + 1, hosts[nHosts].pubkey, 1024, '\n');
 		if (key_end == NULL)
 			continue;
