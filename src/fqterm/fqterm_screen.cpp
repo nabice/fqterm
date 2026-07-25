@@ -545,7 +545,7 @@ void FQTermScreen::termSizeChanged(int column, int row) {
   syncBufferAndScreen();
   bufferSizeChanged();
   this->setPaintState(Repaint);
-  this->repaint();
+  this->update();
 }
 
 /* ------------------------------------------------------------------------ */

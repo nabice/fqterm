@@ -1819,7 +1819,7 @@ void FQTermWindow::setCursorPosition(const QPoint& mousePosition) {
   // set cursor pos, repaint if state changed
   QRect rc;
   if (session_->setCursorPos(screen_->mapToChar(mousePosition), rc)) {
-    screen_->repaint(screen_->mapToRect(rc));
+    screen_->update(screen_->mapToRect(rc));
 
     //re-check whether the cursor is still on the selected rectangle -- dp
     QPoint localPos = mapFromGlobal(QCursor::pos()); //local.
@@ -1828,7 +1828,7 @@ void FQTermWindow::setCursorPosition(const QPoint& mousePosition) {
       QRect dummyRect;
       rc = session_->getMenuRect();
       session_->setCursorPos(screen_->mapToChar(localPos), dummyRect);
-      screen_->repaint(screen_->mapToRect(rc));
+      screen_->update(screen_->mapToRect(rc));
       //restore the state.
       session_->setCursorPos(screen_->mapToChar(mousePosition), dummyRect); 
     }
@@ -1844,12 +1844,11 @@ void FQTermWindow::repaintScreen() {
 
   screen_->setPaintState(FQTermScreen::Repaint);
   if (clientRect_ != QRect()) {
-    screen_->repaint(screen_->mapToRect(clientRect_));
+    screen_->update(screen_->mapToRect(clientRect_));
   } else {
-    screen_->repaint();
+    screen_->update();
   }
   clientRect_ = QRect();
-//  screen_->update(clientRect_);
 }
 
 void FQTermWindow::enterMenuItem() {
@@ -2280,8 +2279,8 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
 }
 
 void FQTermWindow::forcedRepaintScreen() {
-  QResizeEvent *re = new QResizeEvent(screen_->size(), screen_->size());
-  QApplication::postEvent(screen_, re);
+  screen_->setPaintState(FQTermScreen::Repaint);
+  screen_->update();
 }
 
 void FQTermWindow::updateSetting(const FQTermParam& param) {
