@@ -2279,6 +2279,7 @@ void FQTermWindow::sendKey(const int keyCode, const Qt::KeyboardModifiers modifi
 }
 
 void FQTermWindow::forcedRepaintScreen() {
+  screen_->syncBufferAndScreen();
   screen_->setPaintState(FQTermScreen::Repaint);
   screen_->update();
 }

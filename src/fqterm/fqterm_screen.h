@@ -88,6 +88,8 @@ class FQTermScreen: public QWidget {
   // Buffer cell coordinate to screen pixel.
   QRect mapToRect(int x, int y, int width, int height);
   QRect mapToRect(const QRect &);
+
+  void syncBufferAndScreen();
  private:
   int paintState_;
   void updateWidgetRect(QPainter& painter);
@@ -95,7 +97,6 @@ class FQTermScreen: public QWidget {
   void blinkScreen(QPainter &painter);
   void updateCursor(QPainter &painter);
   void repaintScreen(QPaintEvent *pe, QPainter &painter);
-  void syncBufferAndScreen();
   void updateBackgroundPixmap();
   void drawBackground(QPainter& painter, const QRect& rect, int colorIndex);
   void drawBackgroundPixmap(QPainter& painter, const QRect& rect);
