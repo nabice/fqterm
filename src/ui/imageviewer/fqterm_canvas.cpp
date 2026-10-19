@@ -24,6 +24,7 @@
 #include "fqterm_config.h"
 #include "fqterm_path.h"
 #include "fqterm_filedialog.h"
+#include "imagecompat.h"
 
 namespace FQTerm {
 
@@ -196,9 +197,10 @@ void FQTermCanvas::loadImage(const QString& name, bool performAdjust) {
   gifPlayAction_->setEnabled(name.endsWith("gif"));
 
 
-  bool res = image_.load(name);
+  image_ = loadAdaptiveImage(name);
+  bool res = !image_.isNull();
 
-  if (res && !image_.isNull()) {
+  if (res) {
     fileName_ = QFileInfo(name).absoluteFilePath();
     setWindowTitle(QFileInfo(name).fileName());
 

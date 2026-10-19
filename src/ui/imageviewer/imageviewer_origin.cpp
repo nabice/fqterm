@@ -30,6 +30,8 @@
 #include <QHeaderView>
 #include <QImageReader>
 
+#include "imagecompat.h"
+
 #include "fqterm_canvas.h"
 #include "fqterm_config.h"
 #include "fqterm_filedialog.h"
@@ -330,6 +332,12 @@ namespace FQTerm {
       filter.append(it->data());
       nameFilterList << filter;
     }
+    // HEIF family files are not supported by Qt's image plugins; files
+    // renamed to .jpg still get listed, but also list the native ones.
+    static const char *extraFormats[] = {"heic", "heif", "avif", "hif"};
+    for (size_t i = 0; i < sizeof(extraFormats) / sizeof(extraFormats[0]); ++i) {
+      nameFilterList << QString("*.") + extraFormats[i];
+    }
     setNameFilters(nameFilterList);
     setFilter(QDir::Files);
   }
@@ -361,11 +369,11 @@ namespace FQTerm {
       if (path.endsWith(QDir::separator()))
         path.chop(1);
 
-      QPixmap pixmap;
-      bool res = pixmap.load(path);
-      if (!res) {
+      QImage image = loadAdaptiveImage(path);
+      if (image.isNull()) {
 	      return QVariant();
       }
+      QPixmap pixmap = QPixmap::fromImage(image);
 
       if (pixmap.height() > 128 || pixmap.width() > 128) {
         return pixmap.scaled(128, 128,

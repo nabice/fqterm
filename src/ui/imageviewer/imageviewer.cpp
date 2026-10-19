@@ -36,6 +36,7 @@
 #include "fqterm_filedialog.h"
 #include "fqterm_path.h"
 #include "fqterm_trace.h"
+#include "imagecompat.h"
 #include "imageviewer.h"
 
 namespace FQTerm {
@@ -308,9 +309,9 @@ namespace FQTerm {
 
       if (!targetList.contains(sourceList[i])) {
 
-        QImage image;
+        QImage image = loadAdaptiveImage(sourceList[i].absoluteFilePath());
 
-        if (!image.load(sourceList[i].absoluteFilePath())) {
+        if (image.isNull()) {
           QFileIconProvider iconProvider;
           image = iconProvider.icon(sourceList[i]).pixmap(desktopSize().height() / 6.0).toImage();
         } else {
@@ -540,6 +541,12 @@ namespace FQTerm {
       QString filter("*.");
       filter.append(it->data());
       filters << filter;
+    }
+    // HEIF family files are not supported by Qt's image plugins; files
+    // renamed to .jpg still get listed, but also list the native ones.
+    static const char *extraFormats[] = {"heic", "heif", "avif", "hif"};
+    for (size_t i = 0; i < sizeof(extraFormats) / sizeof(extraFormats[0]); ++i) {
+      filters << QString("*.") + extraFormats[i];
     }
     sortPath.setNameFilters(filters);
 
@@ -1289,7 +1296,9 @@ namespace FQTerm {
 
 	int imageHeight = m->key;
 
-	if (!m->image.load(m->filePath)) {
+	m->image = loadAdaptiveImage(m->filePath);
+
+	if (m->image.isNull()) {
 	  QFileIconProvider iconProvider;
 	  m->image = iconProvider.icon(QFileInfo(m->filePath)).pixmap(imageHeight).toImage();
 	} else {
