@@ -161,6 +161,7 @@ void FQTermScreen::focusOutEvent(QFocusEvent*) {
 }
 
 void FQTermScreen::resizeEvent(QResizeEvent*) {
+  buffer_ = QPixmap();
   syncBufferAndScreen();
 }
 
@@ -545,7 +546,7 @@ void FQTermScreen::termSizeChanged(int column, int row) {
   syncBufferAndScreen();
   bufferSizeChanged();
   this->setPaintState(Repaint);
-  this->repaint();
+  this->update();
 }
 
 /* ------------------------------------------------------------------------ */
@@ -665,56 +666,68 @@ void FQTermScreen::blinkEvent() {
 void FQTermScreen::paintEvent(QPaintEvent *pe) {
   FQ_TRACE("screen", 8) << "paintEvent " << pe->rect().x() << "," << pe->rect().y() << " " 
       << pe->rect().width() << "x"  << pe->rect().height();
-  QPainter painter(this);
+
+  if (buffer_.isNull() || buffer_.size() != size()) {
+    buffer_ = QPixmap(size());
+    buffer_.fill(colors_[0]);
+  }
+
+  QPainter painter(&buffer_);
   painter.setRenderHint(QPainter::Antialiasing, FQTermPref::getInstance()->openAntiAlias_);
   painter.setRenderHint(QPainter::TextAntialiasing, FQTermPref::getInstance()->openAntiAlias_);
+  painter.setClipRect(pe->rect());
+
   if (paintState_ == System) {
     repaintScreen(pe, painter);
-    return;
-  }
-
-  if (testPaintState(Repaint)) {
-      FQ_TRACE("screen", 8) << "paintEvent " << "repaint";
-      repaintScreen(pe, painter);
-      clearPaintState(Repaint);
-  }
-
-  if (testPaintState(NewData)) {
-      if (termBuffer_->isLightBackgroundMode() != is_light_background_mode_) {
-            FQ_TRACE("screen", 8) << "paintEvent " << "new data repaint";
-        is_light_background_mode_ = termBuffer_->isLightBackgroundMode();
-        if (is_light_background_mode_) {
-          colors_[0] = param_->foregroundColor_;
-          colors_[7] = param_->backgroundColor_;
-        } else {
-          colors_[0] = param_->backgroundColor_;
-          colors_[7] = param_->foregroundColor_;
-        }
+  } else {
+    if (testPaintState(Repaint)) {
+        FQ_TRACE("screen", 8) << "paintEvent " << "repaint";
         repaintScreen(pe, painter);
-      } else {      
-            FQ_TRACE("screen", 8) << "paintEvent " << "new data refresh";
-        refreshScreen(painter);
-      }
+        clearPaintState(Repaint);
+    }
 
-      clearPaintState(NewData);
+    if (testPaintState(NewData)) {
+        if (termBuffer_->isLightBackgroundMode() != is_light_background_mode_) {
+              FQ_TRACE("screen", 8) << "paintEvent " << "new data repaint";
+          is_light_background_mode_ = termBuffer_->isLightBackgroundMode();
+          if (is_light_background_mode_) {
+            colors_[0] = param_->foregroundColor_;
+            colors_[7] = param_->backgroundColor_;
+          } else {
+            colors_[0] = param_->backgroundColor_;
+            colors_[7] = param_->foregroundColor_;
+          }
+          repaintScreen(pe, painter);
+        } else {
+              FQ_TRACE("screen", 8) << "paintEvent " << "new data refresh";
+          refreshScreen(painter);
+        }
+
+        clearPaintState(NewData);
+    }
+
+    if (testPaintState(Blink)) {
+      FQ_TRACE("screen", 8) << "paintEvent " << "blink";
+        blinkScreen(painter);
+        clearPaintState(Blink);
+    }
+
+    if (testPaintState(Cursor)) {
+      FQ_TRACE("screen", 8) << "paintEvent " << "cursor";
+        updateCursor(painter);
+        clearPaintState(Cursor);
+    }
+
+    if (testPaintState(Widget)) {
+        updateWidgetRect(painter);
+        clearPaintState(Widget);
+    }
   }
 
-  if (testPaintState(Blink)) {
-    FQ_TRACE("screen", 8) << "paintEvent " << "blink";
-      blinkScreen(painter);
-      clearPaintState(Blink);
-  }
+  painter.end();
 
-  if (testPaintState(Cursor)) {
-    FQ_TRACE("screen", 8) << "paintEvent " << "cursor";
-      updateCursor(painter);
-      clearPaintState(Cursor);
-  }
-
-  if (testPaintState(Widget)) {
-      updateWidgetRect(painter);
-      clearPaintState(Widget);
-  }
+  QPainter screenPainter(this);
+  screenPainter.drawPixmap(pe->rect(), buffer_, pe->rect());
 }
 
 void FQTermScreen::blinkScreen(QPainter &painter) {

@@ -171,7 +171,7 @@ void FQTermParam::copy(const FQTermParam& param) {
   isT2S_ = param.isT2S_;
 }
 
-bool FQTermParam::operator==(const FQTermParam& param)
+bool FQTermParam::operator==(const FQTermParam& param) const
 {
   if (name_ != param.name_) return false;
   if (hostAddress_ != param.hostAddress_) return false;
