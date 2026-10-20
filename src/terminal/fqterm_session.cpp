@@ -9,6 +9,7 @@
 #include "fqterm_telnet.h"
 #include "fqterm_decode.h"
 #include "fqterm_zmodem.h"
+#include "fqterm_t2s.h"
 
 #ifdef HAVE_PYTHON
 #include <Python.h>
@@ -89,7 +90,7 @@ FQTermSession::FQTermSession(FQTermConfig *config, FQTermParam param) {
   }
 
   zmodem_ = new FQTermZmodem(config, telnet_, param.protocolType_, param.serverEncodingID_);
-  decoder_ = new FQTermDecode(termBuffer_, param.serverEncodingID_);
+  decoder_ = new FQTermDecode(termBuffer_, param.serverEncodingID_, param.isT2S_);
   FQ_VERIFY(connect(decoder_, SIGNAL(enqReceived()), this, SLOT(onEnqReceived())));
   FQ_VERIFY(connect(decoder_, SIGNAL(onTitleSet(const QString&)), this, SIGNAL(onTitleSet(const QString&))));
 
@@ -1238,7 +1239,13 @@ void FQTermSession::handleInput(const QString &text) {
 
 QString FQTermSession::bbs2unicode(const QByteArray &text)
 {
-  return encoding2unicode(text, param_.serverEncodingID_);
+  QString result = encoding2unicode(text, param_.serverEncodingID_);
+  if (param_.isT2S_) {
+    // Also applied in FQTermDecode; converting twice is harmless because the
+    // simplified->simplified mapping is the identity.
+    result = TraditionalToSimplified(result);
+  }
+  return result;
 }
 
 QByteArray FQTermSession::unicode2bbs(const QString &text) {

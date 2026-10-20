@@ -311,7 +311,7 @@ const char *FQTermDecode::getStateName(const StateOption *state) {
 }
 
 
-FQTermDecode::FQTermDecode(FQTermBuffer *buffer, int server_encoding) {
+FQTermDecode::FQTermDecode(FQTermBuffer *buffer, int server_encoding, bool enableT2S) {
   leftToDecode_.clear();
   termBuffer_ = buffer;
 
@@ -331,6 +331,7 @@ FQTermDecode::FQTermDecode(FQTermBuffer *buffer, int server_encoding) {
 
   // TODO_UTF16: please create a encoding enum.
   server_encoding_ = server_encoding;
+  enableT2S_ = enableT2S;
 
   currentMode_[MODE_MouseX11] = savedMode_[MODE_MouseX11] = false;
   FQ_VERIFY(connect(termBuffer_, SIGNAL(caretChangeRow()), this, SLOT(onCaretChangeRow())));
@@ -408,7 +409,11 @@ int FQTermDecode::decode(const char *cstr, int length) {
 
 
 QString FQTermDecode::bbs2unicode(const QByteArray &text) {
-  return encoding2unicode(text, server_encoding_);
+  QString result = encoding2unicode(text, server_encoding_);
+  if (enableT2S_) {
+    result = TraditionalToSimplified(result);
+  }
+  return result;
 }
 
 ///////////////////////////////////

@@ -392,6 +392,8 @@ bool loadAddress(FQTermConfig *pConf, int n, FQTermParam &param) {
   param.isRectSelect_ = (pConf->getItemValue(strSection, "rectselect") != "0");
   param.isAutoWrap_ = (pConf->getItemValue(strSection, "autowrap" ) == "1");
 
+  param.isT2S_ = (pConf->getItemValue(strSection, "t2s") == "1");
+
   return true;
 }
 
@@ -498,6 +500,7 @@ void saveAddress(FQTermConfig *pConf, int n, const FQTermParam &param) {
   pConf->setItemValue(strSection, "autocopy", param.isAutoCopy_? "1" : "0");
   pConf->setItemValue(strSection, "rectselect", param.isRectSelect_? "1" : "0");
   pConf->setItemValue(strSection, "autowrap", param.isAutoWrap_?"1":"0");
+  pConf->setItemValue(strSection, "t2s", param.isT2S_? "1" : "0");
 
 }
 

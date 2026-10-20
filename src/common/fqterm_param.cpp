@@ -80,6 +80,7 @@ FQTermParam::FQTermParam() {
   isRectSelect_ = false;
   isAutoCopy_ = true;
   isAutoWrap_ = false;
+  isT2S_ = false;
 }
 
 FQTermParam::FQTermParam(const FQTermParam &param) {
@@ -167,6 +168,7 @@ void FQTermParam::copy(const FQTermParam& param) {
   isRectSelect_ = param.isRectSelect_;
   isAutoCopy_ = param.isAutoCopy_;
   isAutoWrap_ = param.isAutoWrap_;
+  isT2S_ = param.isT2S_;
 }
 
 bool FQTermParam::operator==(const FQTermParam& param)
@@ -232,6 +234,7 @@ bool FQTermParam::operator==(const FQTermParam& param)
   if (isRectSelect_ != param.isRectSelect_) return false;
   if (isAutoCopy_ != param.isAutoCopy_) return false;
   if (isAutoWrap_ != param.isAutoWrap_) return false;
+  if (isT2S_ != param.isT2S_) return false;
   return true;
 }
 

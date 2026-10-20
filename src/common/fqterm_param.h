@@ -199,6 +199,8 @@ class FQTermParam {
   bool isRectSelect_;
   bool isAutoCopy_;
   bool isAutoWrap_;
+  // Auto convert traditional Chinese to simplified on display (e.g. PTT).
+  bool isT2S_;
 
   private:
     void copy(const FQTermParam& parm);

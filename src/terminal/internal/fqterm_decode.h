@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include "fqterm_text_line.h"
+#include "fqterm_t2s.h"
 
 namespace FQTerm {
 
@@ -24,7 +25,7 @@ struct StateOption {
 class FQTermDecode: public QObject {
   Q_OBJECT;
  public:
-  FQTermDecode(FQTermBuffer *, int server_encoding);
+  FQTermDecode(FQTermBuffer *, int server_encoding, bool enableT2S = false);
   ~FQTermDecode();
 
 
@@ -38,6 +39,10 @@ class FQTermDecode: public QObject {
 
   void setServerEncoding(int encoding) {
     server_encoding_ = encoding;
+  }
+
+  void setT2SEnabled(bool enable) {
+    enableT2S_ = enable;
   }
 
 
@@ -166,6 +171,7 @@ class FQTermDecode: public QObject {
 
   FQTermBuffer *termBuffer_;
   int server_encoding_;
+  bool enableT2S_;
 
   QString bbs2unicode(const QByteArray &text);
   int processInput(QByteArray& result);
