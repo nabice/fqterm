@@ -133,9 +133,6 @@ FQTermFrame::FQTermFrame()
   //initialize all settings
   //This should be done before add main tool, since some status of tool will depend on setting
   iniSetting();
-  FQTermConfig* conf = new FQTermConfig(getPath(USER_CONFIG) + "address.cfg");
-  checkHelpExists(conf);
-  delete conf;
   //setup toolbar
   addMainTool();
 

@@ -246,15 +246,4 @@ QString FQTermParam::getLanguageName(bool isEnglish, bool translate /* = true */
   return QString(translate ? QObject::tr("&Non-English") : "Non-English");
 }
 
-const FQTermParam& FQTermParam::getFQBBSParam() {
-  static bool inited = false;
-  static FQTermParam param;
-  if (!inited) {
-    param.name_ = "FQTermHelp";
-    param.hostAddress_ = "127.0.0.1";
-    param.port_ = 35172;
-    param.serverEncodingID_ = 2;
-  }
-  return param;
-}
 }  // namespace FQTerm

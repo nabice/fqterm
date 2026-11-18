@@ -189,23 +189,6 @@ bool iniSettings() {
   return true;
 }
 
-void checkHelpExists(FQTermConfig* pConf) {
-  QString strTmp = pConf->getItemValue("bbs list", "num");
-  int bbsCount = strTmp.toInt();
-
-  QString strSection;
-
-  for (int i = 0; i < bbsCount; i++) {
-    strSection.sprintf("bbs %d", i);
-    strTmp = pConf->getItemValue(strSection, "name");
-    if (strTmp == "FQTermHelp")
-      return;
-  }
-  pConf->setItemValue("bbs list", "num", QString("%1").arg(bbsCount + 1));
-  saveAddress(pConf, bbsCount, FQTermParam::getFQBBSParam());
-  pConf->save(getPath(USER_CONFIG) + "address.cfg");
-}
-
 void loadNameList(FQTermConfig *pConf, QStringList &listName) {
   QString strTmp = pConf->getItemValue("bbs list", "num");
 
